@@ -1,6 +1,8 @@
 version: '3.8'
 
 services:
+  # ==================== DATABASES ====================
+  
   # PostgreSQL for Auth Service
   auth_db:
     image: postgres:15-alpine
@@ -41,6 +43,28 @@ services:
     networks:
       - microservices_network
 
+  # PostgreSQL for Order Service
+  order_db:
+    image: postgres:15-alpine
+    container_name: order_db
+    environment:
+      POSTGRES_DB: ${ORDER_DB_NAME:-order_db}
+      POSTGRES_USER: ${ORDER_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${ORDER_DB_PASSWORD:-postgres123}
+    ports:
+      - "${ORDER_DB_PORT:-5435}:5432"
+    volumes:
+      - order_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ORDER_DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices_network
+
+  # ==================== MESSAGE BROKER ====================
+  
   # RabbitMQ Message Broker
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
@@ -60,6 +84,8 @@ services:
       retries: 5
     networks:
       - microservices_network
+
+  # ==================== SERVICES ====================
 
   # Auth Service (Django REST Framework)
   auth_service:
@@ -126,10 +152,44 @@ services:
     command: >
       sh -c "chmod +x /app/entrypoint.sh && /app/entrypoint.sh"
 
+  # Order Service (FastAPI)
+  order_service:
+    build:
+      context: ./order_micro
+      dockerfile: Dockerfile
+    container_name: order_service
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+psycopg://${ORDER_DB_USER:-postgres}:${ORDER_DB_PASSWORD:-postgres123}@order_db:5432/${ORDER_DB_NAME:-order_db}
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-admin}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-admin123}
+      - CART_SERVICE_URL=http://cart_service:8000
+    ports:
+      - "${ORDER_SERVICE_PORT:-8002}:8000"
+    volumes:
+      - ./order_micro:/app
+    depends_on:
+      order_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      cart_service:
+        condition: service_started
+    networks:
+      - microservices_network
+    restart: unless-stopped
+    command: >
+      sh -c "chmod +x /app/entrypoint.sh && /app/entrypoint.sh"
+
 volumes:
   auth_db_data:
     driver: local
   cart_db_data:
+    driver: local
+  order_db_data:
     driver: local
   rabbitmq_data:
     driver: local
