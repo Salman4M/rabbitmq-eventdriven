@@ -1,6 +1,4 @@
-# user_service/requirements.txt
 
-# Django Framework
 Django==4.2.7
 djangorestframework==3.14.0
 

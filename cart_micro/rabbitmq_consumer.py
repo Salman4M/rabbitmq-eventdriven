@@ -60,25 +60,25 @@ class RabbitMQConsumer:
             )
             
             self.channel.basic_qos(prefetch_count=1)
-            logger.info('✅ Connected to RabbitMQ')
-            logger.info(f'📨 Waiting for messages in queue: {self.queue_name}')
+            logger.info(' Connected to RabbitMQ')
+            logger.info(f' Waiting for messages in queue: {self.queue_name}')
         except Exception as e:
-            logger.error(f'❌ Failed to connect to RabbitMQ: {e}')
+            logger.error(f' Failed to connect to RabbitMQ: {e}')
             raise
     
     def callback(self, ch, method, properties, body):
         try:
             message = json.loads(body.decode())
-            logger.info(f'📥 Received message: {message}')
+            logger.info(f' Received message: {message}')
             
             # Create shopcart
             self.create_shopcart(message)
             
             # Acknowledge message
             ch.basic_ack(delivery_tag=method.delivery_tag)
-            logger.info(f'✅ Message acknowledged')
+            logger.info(f' Message acknowledged')
         except Exception as e:
-            logger.error(f'❌ Error processing message: {e}')
+            logger.error(f' Error processing message: {e}')
             # Reject and requeue the message
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
     
@@ -91,7 +91,7 @@ class RabbitMQConsumer:
             )
             
             if existing_cart:
-                logger.info(f'⚠️  Shopcart already exists for user_id: {user_data["user_id"]}')
+                logger.info(f' Shopcart already exists for user_id: {user_data["user_id"]}')
                 return
             
             # Create new shopcart
@@ -102,10 +102,10 @@ class RabbitMQConsumer:
             )
             shopcart = ShopcartCRUD.create_shopcart(db, shopcart_data)
             
-            logger.info(f'🛒 Created shopcart (ID: {shopcart.id}) for user_id: {user_data["user_id"]}')
+            logger.info(f' Created shopcart (ID: {shopcart.id}) for user_id: {user_data["user_id"]}')
         except Exception as e:
             db.rollback()
-            logger.error(f'❌ Error creating shopcart: {e}')
+            logger.error(f' Error creating shopcart: {e}')
             raise
         finally:
             db.close()
@@ -117,13 +117,13 @@ class RabbitMQConsumer:
                 on_message_callback=self.callback,
                 auto_ack=False
             )
-            logger.info('🚀 Starting to consume messages...')
+            logger.info(' Starting to consume messages...')
             self.channel.start_consuming()
         except KeyboardInterrupt:
-            logger.info('⏹️  Stopping consumer...')
+            logger.info(' Stopping consumer...')
             self.stop()
         except Exception as e:
-            logger.error(f'❌ Error in consumer: {e}')
+            logger.error(f' Error in consumer: {e}')
             raise
     
     def stop(self):

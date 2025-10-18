@@ -1,5 +1,4 @@
 #!/bin/bash
-# shopcart_service/entrypoint.sh
 
 set -e
 
@@ -7,20 +6,20 @@ set -e
 DB_HOST=$(echo $DATABASE_URL | sed -n 's/.*@\(.*\):.*/\1/p')
 DB_PORT=$(echo $DATABASE_URL | sed -n 's/.*:\([0-9]*\)\/.*/\1/p')
 
-echo "🔍 Waiting for PostgreSQL at $DB_HOST:$DB_PORT..."
+echo " Waiting for PostgreSQL at $DB_HOST:$DB_PORT..."
 while ! nc -z $DB_HOST $DB_PORT; do
   sleep 0.1
 done
-echo "✅ PostgreSQL started"
+echo " PostgreSQL started"
 
-echo "🔍 Waiting for RabbitMQ..."
+echo " Waiting for RabbitMQ..."
 while ! nc -z $RABBITMQ_HOST $RABBITMQ_PORT; do
   sleep 0.1
 done
-echo "✅ RabbitMQ started"
+echo " RabbitMQ started"
 
-echo "📦 Running Alembic migrations..."
+echo " Running Alembic migrations..."
 alembic upgrade head
 
-echo "🚀 Starting FastAPI server with Uvicorn..."
+echo " Starting FastAPI server with Uvicorn..."
 uvicorn cart_service.main:app --host 0.0.0.0 --port 8000 --reload

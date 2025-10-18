@@ -2,7 +2,7 @@
 name = "cart-micro"
 version = "0.1.0"
 description = "Shopping cart microservice"
-# readme = "README.md"  # ✅ COMMENTED OUT - file doesn't exist
+# readme = "README.md"  #  COMMENTED OUT - can't see the file
 requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.17.0",

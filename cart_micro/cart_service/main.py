@@ -14,7 +14,6 @@ from cart_service.schemas import (
     CartItemUpdate,
     CartItemResponse
 )
-# ✅ FIXED: rabbitmq_consumer is at root level
 import sys
 sys.path.insert(0, '/app')
 from rabbitmq_consumer import RabbitMQConsumer
@@ -32,9 +31,9 @@ app = FastAPI(
 # Initialize database and RabbitMQ consumer
 @app.on_event("startup")
 def startup_event():
-    logger.info("🚀 Starting Shopcart Service...")
+    logger.info(" Starting Shopcart Service...")
     init_db()
-    logger.info("✅ Database initialized")
+    logger.info(" Database initialized")
     
     # Start RabbitMQ consumer in a separate thread
     try:
@@ -46,9 +45,10 @@ def startup_event():
             daemon=True
         )
         consumer_thread.start()
-        logger.info("✅ RabbitMQ consumer started in background")
+        logger.info(" RabbitMQ consumer started in background")
     except Exception as e:
-        logger.error(f"❌ Failed to start RabbitMQ consumer: {e}")
+        logger.error(f" Failed to start RabbitMQ consumer: {e}")
+
 
 @app.get("/", tags=["Health"])
 def read_root():

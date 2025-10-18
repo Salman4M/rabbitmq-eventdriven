@@ -34,9 +34,9 @@ class RabbitMQPublisher:
                 exchange_type='topic',
                 durable=True
             )
-            logger.info('✅ Connected to RabbitMQ')
+            logger.info(' Connected to RabbitMQ')
         except Exception as e:
-            logger.error(f'❌ Failed to connect to RabbitMQ: {e}')
+            logger.error(f' Failed to connect to RabbitMQ: {e}')
             raise
     
     def publish_user_created(self, user):
@@ -60,9 +60,9 @@ class RabbitMQPublisher:
                     content_type='application/json'
                 )
             )
-            logger.info(f'📤 Published user created event for user_id: {user.id}')
+            logger.info(f' Published user created event for user_id: {user.id}')
         except Exception as e:
-            logger.error(f'❌ Error publishing message: {e}')
+            logger.error(f' Error publishing message: {e}')
             # Don't raise exception, just log it
     
     def close(self):

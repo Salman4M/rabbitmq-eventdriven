@@ -9,7 +9,6 @@ import sys
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-# ✅ FIXED: Import from root level, not cart_service
 from cart_service.models import Base
 from decouple import config as env_config
 
