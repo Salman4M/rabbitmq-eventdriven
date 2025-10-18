@@ -67,37 +67,37 @@ class RabbitMQConsumer:
             )
             
             self.channel.basic_qos(prefetch_count=1)
-            logger.info('✅ Connected to RabbitMQ (Cart Consumer)')
-            logger.info(f'📨 Listening on queues: {self.user_queue}, {self.order_queue}')
+            logger.info(' Connected to RabbitMQ (Cart Consumer)')
+            logger.info(f' Listening on queues: {self.user_queue}, {self.order_queue}')
         except Exception as e:
-            logger.error(f'❌ Failed to connect to RabbitMQ: {e}')
+            logger.error(f' Failed to connect to RabbitMQ: {e}')
             raise
     
     def callback_user_created(self, ch, method, properties, body):
         """Handle user.created events"""
         try:
             message = json.loads(body.decode())
-            logger.info(f'📥 Received user.created: {message}')
+            logger.info(f' Received user.created: {message}')
             
             self.create_shopcart(message)
             
             ch.basic_ack(delivery_tag=method.delivery_tag)
-            logger.info(f'✅ user.created processed')
+            logger.info(f' user.created processed')
         except Exception as e:
-            logger.error(f'❌ Error processing user.created: {e}')
+            logger.error(f' Error processing user.created: {e}')
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
     
     def callback_order_created(self, ch, method, properties, body):
         """Handle order.created events - clear the cart"""
         try:
             message = json.loads(body.decode())
-            logger.info(f'📥 Received order.created: {message}')
+            logger.info(f' Received order.created: {message}')
             
             cart_id = message.get('cart_id')
             order_id = message.get('order_id')
             
             if not cart_id:
-                logger.error('❌ No cart_id in order.created event')
+                logger.error(' No cart_id in order.created event')
                 ch.basic_ack(delivery_tag=method.delivery_tag)
                 return
             
@@ -105,9 +105,9 @@ class RabbitMQConsumer:
             self.clear_cart(cart_id, order_id)
             
             ch.basic_ack(delivery_tag=method.delivery_tag)
-            logger.info(f'✅ order.created processed - cart {cart_id} cleared')
+            logger.info(f' order.created processed - cart {cart_id} cleared')
         except Exception as e:
-            logger.error(f'❌ Error processing order.created: {e}')
+            logger.error(f' Error processing order.created: {e}')
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
     
     def create_shopcart(self, user_data):
@@ -119,7 +119,7 @@ class RabbitMQConsumer:
             )
             
             if existing_cart:
-                logger.info(f'⚠️ Shopcart already exists for user_id: {user_data["user_id"]}')
+                logger.info(f' Shopcart already exists for user_id: {user_data["user_id"]}')
                 return
             
             shopcart_data = ShopcartCreate(
@@ -129,10 +129,10 @@ class RabbitMQConsumer:
             )
             shopcart = ShopcartCRUD.create_shopcart(db, shopcart_data)
             
-            logger.info(f'🛒 Created shopcart (ID: {shopcart.id}) for user_id: {user_data["user_id"]}')
+            logger.info(f' Created shopcart (ID: {shopcart.id}) for user_id: {user_data["user_id"]}')
         except Exception as e:
             db.rollback()
-            logger.error(f'❌ Error creating shopcart: {e}')
+            logger.error(f' Error creating shopcart: {e}')
             raise
         finally:
             db.close()
@@ -144,12 +144,12 @@ class RabbitMQConsumer:
             success = ShopcartCRUD.clear_shopcart(db, cart_id)
             
             if success:
-                logger.info(f'🗑️ Cleared cart {cart_id} for order {order_id}')
+                logger.info(f' Cleared cart {cart_id} for order {order_id}')
             else:
-                logger.warning(f'⚠️ Cart {cart_id} not found or already empty')
+                logger.warning(f' Cart {cart_id} not found or already empty')
         except Exception as e:
             db.rollback()
-            logger.error(f'❌ Error clearing cart: {e}')
+            logger.error(f' Error clearing cart: {e}')
             raise
         finally:
             db.close()
@@ -170,13 +170,13 @@ class RabbitMQConsumer:
                 auto_ack=False
             )
             
-            logger.info('🚀 Starting to consume messages...')
+            logger.info(' Starting to consume messages...')
             self.channel.start_consuming()
         except KeyboardInterrupt:
-            logger.info('⏹️ Stopping consumer...')
+            logger.info(' Stopping consumer...')
             self.stop()
         except Exception as e:
-            logger.error(f'❌ Error in consumer: {e}')
+            logger.error(f' Error in consumer: {e}')
             raise
     
     def stop(self):
