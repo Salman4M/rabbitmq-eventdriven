@@ -40,9 +40,9 @@ class RabbitMQPublisher:
                 durable=True
             )
             
-            logger.info('✅ Connected to RabbitMQ (Publisher)')
+            logger.info(' Connected to RabbitMQ (Publisher)')
         except Exception as e:
-            logger.error(f'❌ Failed to connect to RabbitMQ: {e}')
+            logger.error(f' Failed to connect to RabbitMQ: {e}')
             raise
     
     def publish_order_created(self, order_id: int, user_id: int, cart_id: int):
@@ -72,9 +72,9 @@ class RabbitMQPublisher:
                 )
             )
             
-            logger.info(f'📤 Published order.created event for order_id: {order_id}')
+            logger.info(f' Published order.created event for order_id: {order_id}')
         except Exception as e:
-            logger.error(f'❌ Error publishing order.created: {e}')
+            logger.error(f' Error publishing order.created: {e}')
     
     def publish_order_cancelled(self, order_id: int, user_id: int):
         """Publish order.cancelled event"""
@@ -102,9 +102,9 @@ class RabbitMQPublisher:
                 )
             )
             
-            logger.info(f'📤 Published order.cancelled event for order_id: {order_id}')
+            logger.info(f' Published order.cancelled event for order_id: {order_id}')
         except Exception as e:
-            logger.error(f'❌ Error publishing order.cancelled: {e}')
+            logger.error(f' Error publishing order.cancelled: {e}')
     
     def close(self):
         """Close connection"""

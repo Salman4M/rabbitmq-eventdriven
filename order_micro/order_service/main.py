@@ -21,20 +21,20 @@ app = FastAPI(
 # Initialize
 @app.on_event("startup")
 def startup_event():
-    logger.info("🚀 Starting Order Service...")
+    logger.info(" Starting Order Service...")
     init_db()
-    logger.info("✅ Database initialized")
+    logger.info(" Database initialized")
     
     try:
         rabbitmq_publisher.connect()
-        logger.info("✅ RabbitMQ publisher connected")
+        logger.info(" RabbitMQ publisher connected")
     except Exception as e:
-        logger.error(f"❌ Failed to connect RabbitMQ publisher: {e}")
+        logger.error(f" Failed to connect RabbitMQ publisher: {e}")
 
 @app.on_event("shutdown")
 def shutdown_event():
     rabbitmq_publisher.close()
-    logger.info("👋 Order Service shutdown")
+    logger.info(" Order Service shutdown")
 
 @app.get("/", tags=["Health"])
 def read_root():
@@ -97,10 +97,10 @@ async def create_order(
             cart_id=cart['id']
         )
     except Exception as e:
-        logger.error(f"❌ Failed to publish order.created event: {e}")
+        logger.error(f" Failed to publish order.created event: {e}")
         # Don't fail the request, cart will be cleared when RabbitMQ recovers
     
-    logger.info(f"✅ Order created: ID={order.id}, User={order.user_id}")
+    logger.info(f" Order created: ID={order.id}, User={order.user_id}")
     return order
 
 @app.get("/orders", response_model=List[OrderSummary], tags=["Orders"])
@@ -187,6 +187,6 @@ def cancel_order(order_id: int, db: Session = Depends(get_db)):
             user_id=order.user_id
         )
     except Exception as e:
-        logger.error(f"❌ Failed to publish order.cancelled event: {e}")
+        logger.error(f" Failed to publish order.cancelled event: {e}")
     
     return {"message": "Order cancelled successfully", "order_id": order_id}

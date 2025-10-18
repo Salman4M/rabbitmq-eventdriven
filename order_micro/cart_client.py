@@ -26,11 +26,11 @@ class CartServiceClient:
                 return cart_data
                 
         except httpx.HTTPStatusError as e:
-            logger.error(f"❌ HTTP error getting cart: {e.response.status_code}")
+            logger.error(f" HTTP error getting cart: {e.response.status_code}")
             raise
         except httpx.RequestError as e:
-            logger.error(f"❌ Request error getting cart: {e}")
+            logger.error(f" Request error getting cart: {e}")
             raise
         except Exception as e:
-            logger.error(f"❌ Unexpected error getting cart: {e}")
+            logger.error(f" Unexpected error getting cart: {e}")
             raise
