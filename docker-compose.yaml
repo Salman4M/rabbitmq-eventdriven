@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  # PostgreSQL for Auth Service
+  auth_db:
+    image: postgres:15-alpine
+    container_name: auth_db
+    environment:
+      POSTGRES_DB: ${USER_DB_NAME:-auth_db}
+      POSTGRES_USER: ${USER_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD:-postgres123}
+    ports:
+      - "${USER_DB_PORT:-5433}:5432"
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USER_DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices_network
+
+  # PostgreSQL for Cart Service
+  cart_db:
+    image: postgres:15-alpine
+    container_name: cart_db
+    environment:
+      POSTGRES_DB: ${SHOPCART_DB_NAME:-cart_db}
+      POSTGRES_USER: ${SHOPCART_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${SHOPCART_DB_PASSWORD:-postgres123}
+    ports:
+      - "${SHOPCART_DB_PORT:-5434}:5432"
+    volumes:
+      - cart_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SHOPCART_DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices_network
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-admin123}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - microservices_network
+
+  # Auth Service (Django REST Framework)
+  auth_service:
+    build:
+      context: ./auth_micro
+      dockerfile: Dockerfile
+    container_name: auth_service
+    env_file:
+      - .env
+    environment:
+      - DB_NAME=${USER_DB_NAME:-auth_db}
+      - DB_USER=${USER_DB_USER:-postgres}
+      - DB_PASSWORD=${USER_DB_PASSWORD:-postgres123}
+      - DB_HOST=auth_db
+      - DB_PORT=5432
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-admin}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-admin123}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DJANGO_DEBUG=${DJANGO_DEBUG:-True}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-*}
+    ports:
+      - "${USER_SERVICE_PORT:-8000}:8000"
+    volumes:
+      - ./auth_micro:/app
+    depends_on:
+      auth_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - microservices_network
+    restart: unless-stopped
+    command: >
+      sh -c "chmod +x /app/entrypoint.sh && /app/entrypoint.sh"
+
+  # Cart Service (FastAPI)
+  cart_service:
+    build:
+      context: ./cart_micro
+      dockerfile: Dockerfile
+    container_name: cart_service
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+psycopg://${SHOPCART_DB_USER:-postgres}:${SHOPCART_DB_PASSWORD:-postgres123}@cart_db:5432/${SHOPCART_DB_NAME:-cart_db}
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-admin}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-admin123}
+    ports:
+      - "${SHOPCART_SERVICE_PORT:-8001}:8000"
+    volumes:
+      - ./cart_micro:/app
+    depends_on:
+      cart_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - microservices_network
+    restart: unless-stopped
+    command: >
+      sh -c "chmod +x /app/entrypoint.sh && /app/entrypoint.sh"
+
+volumes:
+  auth_db_data:
+    driver: local
+  cart_db_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+networks:
+  microservices_network:
+    driver: bridge
